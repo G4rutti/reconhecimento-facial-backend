@@ -25,6 +25,11 @@ RUN apt-get update && apt-get install -y \
     libxrender1 \
     libgl1-mesa-glx \
     libglib2.0-0 \
+    tesseract-ocr \
+    libtesseract-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libtiff-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copia os arquivos compilados do ambiente de build
