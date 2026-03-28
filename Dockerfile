@@ -10,24 +10,30 @@ RUN dotnet restore ./FaceAuth.API/FaceAuth.API.csproj -r linux-x64
 COPY . ./
 RUN dotnet publish ./FaceAuth.API/FaceAuth.API.csproj -c Release -r linux-x64 --self-contained false -o /app/out
 
-# Usa a imagem oficial do ASP.NET Core Runtime 9 como ambiente de execução
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+# Verifica que os binários nativos do OpenCvSharp foram copiados
+RUN echo "=== Verificando binarios nativos ===" && \
+    find /app/out -name "*OpenCv*" -o -name "*opencv*" | head -20
+
+# ============================================================
+# Runtime: Ubuntu 22.04 (Jammy) — tem libjpeg.so.8 nativo
+# (Debian bookworm so tem libjpeg.so.62, incompativel)
+# ============================================================
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-jammy AS runtime
 WORKDIR /app
 
 # Instala dependências nativas necessárias para DlibDotNet e OpenCvSharp em Linux
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libgdiplus \
-    libc6-dev \
-    libx11-dev \
+    libx11-6 \
     libasound2 \
     libxext6 \
     libsm6 \
     libxrender1 \
     libgl1-mesa-glx \
     libglib2.0-0 \
-    libjpeg62-turbo \
+    libjpeg8 \
     libpng16-16 \
-    libtiff6 \
+    libtiff5 \
     libwebp7 \
     libopenjp2-7 \
     && rm -rf /var/lib/apt/lists/*
@@ -38,7 +44,7 @@ COPY --from=build-env /app/out .
 # Configura as variáveis de ambiente base
 ENV ASPNETCORE_ENVIRONMENT=Development
 ENV ASPNETCORE_URLS=http://+:8080
-ENV LD_LIBRARY_PATH=/app/runtimes/linux-x64/native:$LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH=/app:$LD_LIBRARY_PATH
 EXPOSE 8080
 
 # Define o ponto de entrada da aplicação
