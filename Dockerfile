@@ -10,17 +10,17 @@ RUN dotnet restore ./FaceAuth.API/FaceAuth.API.csproj -r linux-x64
 COPY . ./
 RUN dotnet publish ./FaceAuth.API/FaceAuth.API.csproj -c Release -r linux-x64 --self-contained false -o /app/out
 
-# Verifica que os binários nativos do OpenCvSharp foram copiados
-RUN echo "=== Verificando binarios nativos ===" && \
+# Verifica que os binários nativos foram copiados
+RUN echo "=== Binarios nativos ===" && \
     find /app/out -name "*OpenCv*" -o -name "*opencv*" | head -20
 
 # ============================================================
-# Runtime: Debian 12 (bookworm) — imagem padrão do .NET 9
+# Runtime
 # ============================================================
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app
 
-# Instala dependências nativas necessárias para DlibDotNet e OpenCvSharp em Linux
+# Instala TODAS as dependências nativas que o OpenCvSharp (full) e DlibDotNet precisam
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgdiplus \
     libc6-dev \
@@ -36,9 +36,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libtiff6 \
     libwebp7 \
     libopenjp2-7 \
+    tesseract-ocr \
+    libtesseract-dev \
+    libgtk-3-0 \
     && rm -rf /var/lib/apt/lists/* \
-    && ln -s /usr/lib/x86_64-linux-gnu/libjpeg.so.62 /usr/lib/x86_64-linux-gnu/libjpeg.so.8 \
-    && ln -s /usr/lib/x86_64-linux-gnu/libtiff.so.6 /usr/lib/x86_64-linux-gnu/libtiff.so.5 \
+    && ln -sf /usr/lib/x86_64-linux-gnu/libjpeg.so.62 /usr/lib/x86_64-linux-gnu/libjpeg.so.8 \
+    && ln -sf /usr/lib/x86_64-linux-gnu/libtiff.so.6 /usr/lib/x86_64-linux-gnu/libtiff.so.5 \
     && ldconfig
 
 # Copia os arquivos compilados do ambiente de build
