@@ -6,13 +6,34 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configurar porta dinâmica (Railway injeta a variável PORT)
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(port))
+{
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+}
+
 // ============================================
 // Configuração dos Serviços (Dependency Injection)
 // ============================================
 
+// Configuração do Banco de Dados para Railway e Local
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+
+if (!string.IsNullOrEmpty(databaseUrl))
+{
+    var isUri = Uri.TryCreate(databaseUrl, UriKind.Absolute, out var databaseUri);
+    if (isUri && databaseUri != null)
+    {
+        var userInfo = databaseUri.UserInfo.Split(':');
+        connectionString = $"Host={databaseUri.Host};Port={databaseUri.Port};Database={databaseUri.LocalPath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SslMode=Require;TrustServerCertificate=True;";
+    }
+}
+
 // Configurar PostgreSQL com Entity Framework Core
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(connectionString));
 
 // Registrar repositórios
 builder.Services.AddScoped<UserRepository>();
@@ -28,7 +49,7 @@ builder.Services.AddControllers();
 
 // Configurar Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddOpenApi();
+builder.Services.AddSwaggerGen();
 
 // Configurar CORS (permitir acesso do frontend)
 builder.Services.AddCors(options =>
@@ -59,7 +80,8 @@ using (var scope = app.Services.CreateScope())
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.UseCors("AllowAll");
