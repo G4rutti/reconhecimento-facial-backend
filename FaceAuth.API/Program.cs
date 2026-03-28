@@ -44,6 +44,7 @@ else if (!string.IsNullOrEmpty(pgHost))
 }
 else
 {
+    // TESTE
     Console.WriteLine("[DB] ALERTA: Nenhuma variável do Railway encontrada. Usando config local (localhost). Se estiver na nuvem, lembre-se de linkar o banco ao serviço!");
 }
 
