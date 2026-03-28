@@ -36,7 +36,7 @@ RUN apt-get update && \
     dpkg -i /tmp/packages-microsoft-prod.deb && \
     rm /tmp/packages-microsoft-prod.deb && \
     apt-get update && \
-    apt-get install -y --no-install-recommends aspnet-runtime-9.0 && \
+    apt-get install -y --no-install-recommends aspnetcore-runtime-9.0 && \
     rm -rf /var/lib/apt/lists/*
 
 # Instala dependências nativas do OpenCvSharp e DlibDotNet
