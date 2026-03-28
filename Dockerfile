@@ -10,16 +10,15 @@ RUN dotnet restore ./FaceAuth.API/FaceAuth.API.csproj
 COPY . ./
 RUN dotnet publish ./FaceAuth.API/FaceAuth.API.csproj -c Release -o /app/out
 
-# Copia explicitamente o .so nativo do NuGet cache para o output
-RUN SO_FILE=$(find /root/.nuget -name "libOpenCvSharpExtern.so" -path "*/linux*" 2>/dev/null | head -1) && \
-    if [ -n "$SO_FILE" ]; then \
-      echo ">>> Encontrado: $SO_FILE" && \
-      cp "$SO_FILE" /app/out/ && \
-      mkdir -p /app/out/runtimes/linux-x64/native && \
-      cp "$SO_FILE" /app/out/runtimes/linux-x64/native/ ; \
-    else \
-      echo ">>> AVISO: .so nao encontrado no NuGet cache" ; \
-    fi
+# Copia explicitamente TODOS os .so nativos do NuGet cache para o output
+RUN mkdir -p /app/out/runtimes/linux-x64/native && \
+    echo "=== Copiando OpenCvSharp ===" && \
+    find /root/.nuget -name "libOpenCvSharpExtern.so" -path "*/linux*" 2>/dev/null -exec cp {} /app/out/ \; -exec cp {} /app/out/runtimes/linux-x64/native/ \; && \
+    echo "=== Copiando DlibDotNet ===" && \
+    find /root/.nuget -name "*.so" -path "*/DlibDotNet*" -path "*/linux*" 2>/dev/null -exec cp {} /app/out/ \; -exec cp {} /app/out/runtimes/linux-x64/native/ \; && \
+    echo "=== Arquivos .so copiados ===" && \
+    ls -la /app/out/*.so 2>/dev/null || echo "Nenhum .so na raiz" && \
+    ls -la /app/out/runtimes/linux-x64/native/*.so 2>/dev/null || echo "Nenhum .so em runtimes"
 
 # ============================================================
 # STAGE 2: Runtime — Ubuntu 22.04 (tem libjpeg.so.8,
@@ -59,6 +58,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libopenjp2-7 \
     libilmbase25 \
     libopenexr25 \
+    libopenblas0 \
+    liblapack3 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
