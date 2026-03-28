@@ -19,33 +19,37 @@ if (!string.IsNullOrEmpty(port))
 
 // Configuração do Banco de Dados para Railway e Local
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
-var pgHost = Environment.GetEnvironmentVariable("PGHOST");
 
-if (!string.IsNullOrEmpty(databaseUrl))
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL") 
+               ?? Environment.GetEnvironmentVariable("CONNECTION_STRING");
+
+var pgHost = Environment.GetEnvironmentVariable("PGHOST") 
+          ?? Environment.GetEnvironmentVariable("POSTGRES_HOST");
+
+if (!string.IsNullOrEmpty(databaseUrl) && databaseUrl.StartsWith("postgres"))
 {
     var isUri = Uri.TryCreate(databaseUrl, UriKind.Absolute, out var databaseUri);
     if (isUri && databaseUri != null)
     {
         var userInfo = databaseUri.UserInfo.Split(':');
         connectionString = $"Host={databaseUri.Host};Port={databaseUri.Port};Database={databaseUri.LocalPath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SslMode=Require;TrustServerCertificate=True;";
-        Console.WriteLine($"[DB] Conectando via DATABASE_URL ({databaseUri.Host})");
+        Console.WriteLine($"[DB] Conectando via URL ({databaseUri.Host})");
     }
 }
 else if (!string.IsNullOrEmpty(pgHost))
 {
-    var pgPort = Environment.GetEnvironmentVariable("PGPORT") ?? "5432";
-    var pgUser = Environment.GetEnvironmentVariable("PGUSER");
-    var pgPass = Environment.GetEnvironmentVariable("PGPASSWORD");
-    var pgDb = Environment.GetEnvironmentVariable("PGDATABASE");
+    var pgPort = Environment.GetEnvironmentVariable("PGPORT") ?? Environment.GetEnvironmentVariable("POSTGRES_PORT") ?? "5432";
+    var pgUser = Environment.GetEnvironmentVariable("PGUSER") ?? Environment.GetEnvironmentVariable("POSTGRES_USER");
+    var pgPass = Environment.GetEnvironmentVariable("PGPASSWORD") ?? Environment.GetEnvironmentVariable("POSTGRES_PASSWORD");
+    var pgDb = Environment.GetEnvironmentVariable("PGDATABASE") ?? Environment.GetEnvironmentVariable("POSTGRES_DB");
 
     connectionString = $"Host={pgHost};Port={pgPort};Database={pgDb};Username={pgUser};Password={pgPass};SslMode=Require;TrustServerCertificate=True;";
-    Console.WriteLine($"[DB] Conectando via variáveis PG* ({pgHost}:{pgPort})");
+    Console.WriteLine($"[DB] Conectando via Variáveis Manuais ({pgHost}:{pgPort})");
 }
 else
 {
     // TESTE
-    Console.WriteLine("[DB] ALERTA: Nenhuma variável do Railway encontrada. Usando config local (localhost). Se estiver na nuvem, lembre-se de linkar o banco ao serviço!");
+    Console.WriteLine("[DB] ALERTA: Nenhuma variável de banco encontrada. Usando config local (localhost).");
 }
 
 // Configurar PostgreSQL com Entity Framework Core
