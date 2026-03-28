@@ -21,7 +21,7 @@
     </PackageReference>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
     <PackageReference Include="OpenCvSharp4" Version="4.10.0.20241108" />
-    <PackageReference Include="OpenCvSharp4.official.runtime.linux-x64" Version="4.10.0.20241108" />
+    <PackageReference Include="OpenCvSharp4.official.runtime.linux-x64.slim" Version="4.10.0.20241108" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
   </ItemGroup>
 
