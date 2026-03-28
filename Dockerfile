@@ -15,15 +15,15 @@ RUN echo "=== Verificando binarios nativos ===" && \
     find /app/out -name "*OpenCv*" -o -name "*opencv*" | head -20
 
 # ============================================================
-# Runtime: Ubuntu 22.04 (Jammy) — tem libjpeg.so.8 nativo
-# (Debian bookworm so tem libjpeg.so.62, incompativel)
+# Runtime: Debian 12 (bookworm) — imagem padrão do .NET 9
 # ============================================================
-FROM mcr.microsoft.com/dotnet/aspnet:9.0-jammy AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app
 
 # Instala dependências nativas necessárias para DlibDotNet e OpenCvSharp em Linux
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgdiplus \
+    libc6-dev \
     libx11-6 \
     libasound2 \
     libxext6 \
@@ -31,12 +31,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrender1 \
     libgl1-mesa-glx \
     libglib2.0-0 \
-    libjpeg8 \
+    libjpeg62-turbo \
     libpng16-16 \
-    libtiff5 \
+    libtiff6 \
     libwebp7 \
     libopenjp2-7 \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && ln -s /usr/lib/x86_64-linux-gnu/libjpeg.so.62 /usr/lib/x86_64-linux-gnu/libjpeg.so.8 \
+    && ldconfig
 
 # Copia os arquivos compilados do ambiente de build
 COPY --from=build-env /app/out .
