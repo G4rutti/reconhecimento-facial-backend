@@ -99,11 +99,15 @@ using (var scope = app.Services.CreateScope())
 // Configuração do Pipeline HTTP
 // ============================================
 
-if (app.Environment.IsDevelopment())
+// Habilitar Swagger em todos os ambientes (inclusive no Railway)
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    c.RoutePrefix = "docs"; // Muda a interface visual do /swagger para o /docs
+});
+
+// Redirecionar a rota principal ("/") direto para o painel do Swagger
+app.MapGet("/", () => Results.Redirect("/docs"));
 
 app.UseCors("AllowAll");
 app.MapControllers();
