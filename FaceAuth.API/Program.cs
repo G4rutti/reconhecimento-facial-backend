@@ -104,6 +104,7 @@ app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.RoutePrefix = "docs"; // Muda a interface visual do /swagger para o /docs
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "FaceAuth API v1"); // Aponta onde o arquivo JSON das rotas realmente fica
 });
 
 // Redirecionar a rota principal ("/") direto para o painel do Swagger
