@@ -20,6 +20,7 @@ if (!string.IsNullOrEmpty(port))
 // Configuração do Banco de Dados para Railway e Local
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+var pgHost = Environment.GetEnvironmentVariable("PGHOST");
 
 if (!string.IsNullOrEmpty(databaseUrl))
 {
@@ -28,7 +29,22 @@ if (!string.IsNullOrEmpty(databaseUrl))
     {
         var userInfo = databaseUri.UserInfo.Split(':');
         connectionString = $"Host={databaseUri.Host};Port={databaseUri.Port};Database={databaseUri.LocalPath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SslMode=Require;TrustServerCertificate=True;";
+        Console.WriteLine($"[DB] Conectando via DATABASE_URL ({databaseUri.Host})");
     }
+}
+else if (!string.IsNullOrEmpty(pgHost))
+{
+    var pgPort = Environment.GetEnvironmentVariable("PGPORT") ?? "5432";
+    var pgUser = Environment.GetEnvironmentVariable("PGUSER");
+    var pgPass = Environment.GetEnvironmentVariable("PGPASSWORD");
+    var pgDb = Environment.GetEnvironmentVariable("PGDATABASE");
+
+    connectionString = $"Host={pgHost};Port={pgPort};Database={pgDb};Username={pgUser};Password={pgPass};SslMode=Require;TrustServerCertificate=True;";
+    Console.WriteLine($"[DB] Conectando via variáveis PG* ({pgHost}:{pgPort})");
+}
+else
+{
+    Console.WriteLine("[DB] ALERTA: Nenhuma variável do Railway encontrada. Usando config local (localhost). Se estiver na nuvem, lembre-se de linkar o banco ao serviço!");
 }
 
 // Configurar PostgreSQL com Entity Framework Core
