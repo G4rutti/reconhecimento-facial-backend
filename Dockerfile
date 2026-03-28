@@ -1,42 +1,47 @@
 # ============================================================
-# STAGE 1: Build
+# STAGE 1: Build (SDK oficial do .NET 9)
 # ============================================================
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build-env
 WORKDIR /app
 
-# Restaura dependências (sem -r para manter estrutura runtimes/)
 COPY FaceAuth.API/*.csproj ./FaceAuth.API/
 RUN dotnet restore ./FaceAuth.API/FaceAuth.API.csproj
 
-# Compila e publica (sem -r para manter pasta runtimes/linux-x64/native/)
 COPY . ./
 RUN dotnet publish ./FaceAuth.API/FaceAuth.API.csproj -c Release -o /app/out
 
-# Copia EXPLICITAMENTE o .so nativo do NuGet cache para o output
-RUN echo "=== Procurando libOpenCvSharpExtern.so ===" && \
-    find /root/.nuget /app -name "libOpenCvSharpExtern.so" 2>/dev/null && \
-    SO_FILE=$(find /root/.nuget -name "libOpenCvSharpExtern.so" -path "*/linux-x64/*" 2>/dev/null | head -1) && \
+# Copia explicitamente o .so nativo do NuGet cache para o output
+RUN SO_FILE=$(find /root/.nuget -name "libOpenCvSharpExtern.so" -path "*/linux*" 2>/dev/null | head -1) && \
     if [ -n "$SO_FILE" ]; then \
-      echo "Encontrado: $SO_FILE" && \
+      echo ">>> Encontrado: $SO_FILE" && \
+      cp "$SO_FILE" /app/out/ && \
       mkdir -p /app/out/runtimes/linux-x64/native && \
-      cp "$SO_FILE" /app/out/runtimes/linux-x64/native/ && \
-      cp "$SO_FILE" /app/out/ ; \
+      cp "$SO_FILE" /app/out/runtimes/linux-x64/native/ ; \
     else \
-      echo "ERRO: libOpenCvSharpExtern.so nao encontrado no NuGet cache!" && \
-      find /root/.nuget -name "*.so" 2>/dev/null | head -20 ; \
+      echo ">>> AVISO: .so nao encontrado no NuGet cache" ; \
     fi
 
-# Verifica resultado
-RUN echo "=== Arquivos nativos no output ===" && \
-    find /app/out -name "*.so" | head -20
-
 # ============================================================
-# STAGE 2: Runtime
+# STAGE 2: Runtime — Ubuntu 22.04 (tem libjpeg.so.8,
+# libtiff.so.5, libIlmImf-2_5.so.25, libtesseract.so.4)
 # ============================================================
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
-WORKDIR /app
+FROM ubuntu:22.04 AS runtime
 
-# Instala dependências nativas do OpenCvSharp (slim) e DlibDotNet
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Instala o ASP.NET 9 runtime do repositório oficial da Microsoft
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends wget ca-certificates && \
+    wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O /tmp/packages-microsoft-prod.deb && \
+    dpkg -i /tmp/packages-microsoft-prod.deb && \
+    rm /tmp/packages-microsoft-prod.deb && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends aspnet-runtime-9.0 && \
+    rm -rf /var/lib/apt/lists/*
+
+# Instala dependências nativas do OpenCvSharp e DlibDotNet
+# Ubuntu 22.04 tem TODAS as versões corretas:
+#   libjpeg.so.8, libtiff.so.5, libIlmImf-2_5.so.25
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgdiplus \
     libc6-dev \
@@ -47,20 +52,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrender1 \
     libgl1-mesa-glx \
     libglib2.0-0 \
-    libjpeg62-turbo \
+    libjpeg8 \
     libpng16-16 \
-    libtiff6 \
+    libtiff5 \
     libwebp7 \
     libopenjp2-7 \
-    && rm -rf /var/lib/apt/lists/* \
-    && ln -sf /usr/lib/x86_64-linux-gnu/libjpeg.so.62 /usr/lib/x86_64-linux-gnu/libjpeg.so.8 \
-    && ln -sf /usr/lib/x86_64-linux-gnu/libtiff.so.6 /usr/lib/x86_64-linux-gnu/libtiff.so.5 \
-    && ldconfig
+    libilmbase25 \
+    libopenexr25 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copia os arquivos compilados do build
+WORKDIR /app
 COPY --from=build-env /app/out .
 
-# Garante que o runtime encontre todas as bibliotecas nativas
 ENV ASPNETCORE_ENVIRONMENT=Development
 ENV ASPNETCORE_URLS=http://+:8080
 ENV LD_LIBRARY_PATH=/app:/app/runtimes/linux-x64/native:$LD_LIBRARY_PATH
