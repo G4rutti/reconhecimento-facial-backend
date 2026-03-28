@@ -4,11 +4,11 @@ WORKDIR /app
 
 # Copia os arquivos de projeto primeiro para restaurar as dependências (caching)
 COPY FaceAuth.API/*.csproj ./FaceAuth.API/
-RUN dotnet restore ./FaceAuth.API/FaceAuth.API.csproj
+RUN dotnet restore ./FaceAuth.API/FaceAuth.API.csproj -r linux-x64
 
 # Copia todo o restante do código e compila a aplicação
 COPY . ./
-RUN dotnet publish ./FaceAuth.API/FaceAuth.API.csproj -c Release -o /app/out
+RUN dotnet publish ./FaceAuth.API/FaceAuth.API.csproj -c Release -r linux-x64 --self-contained false -o /app/out
 
 # Usa a imagem oficial do ASP.NET Core Runtime 9 como ambiente de execução
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
@@ -25,11 +25,11 @@ RUN apt-get update && apt-get install -y \
     libxrender1 \
     libgl1-mesa-glx \
     libglib2.0-0 \
-    tesseract-ocr \
-    libtesseract-dev \
-    libjpeg-dev \
-    libpng-dev \
-    libtiff-dev \
+    libjpeg62-turbo \
+    libpng16-16 \
+    libtiff6 \
+    libwebp7 \
+    libopenjp2-7 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copia os arquivos compilados do ambiente de build
@@ -38,6 +38,7 @@ COPY --from=build-env /app/out .
 # Configura as variáveis de ambiente base
 ENV ASPNETCORE_ENVIRONMENT=Development
 ENV ASPNETCORE_URLS=http://+:8080
+ENV LD_LIBRARY_PATH=/app/runtimes/linux-x64/native:$LD_LIBRARY_PATH
 EXPOSE 8080
 
 # Define o ponto de entrada da aplicação
