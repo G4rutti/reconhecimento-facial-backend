@@ -115,7 +115,9 @@ app.MapControllers();
 
 Console.WriteLine("🚀 FaceAuth API rodando!");
 Console.WriteLine("📡 Endpoints disponíveis:");
-Console.WriteLine("   POST /api/auth/register     → Cadastro de usuário");
-Console.WriteLine("   POST /api/auth/authenticate  → Autenticação facial");
+Console.WriteLine("   POST /api/auth/register       → Cadastro de usuário (multi-embedding)");
+Console.WriteLine("   POST /api/auth/authenticate   → Autenticação facial (anti-spoofing + rate limit)");
+Console.WriteLine("   POST /api/auth/validate-image → Validação de qualidade da imagem");
+Console.WriteLine("   GET  /api/auth/logs           → Logs de acesso (auditoria)");
 
 app.Run();

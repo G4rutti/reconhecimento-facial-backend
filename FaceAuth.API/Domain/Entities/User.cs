@@ -17,8 +17,20 @@ namespace FaceAuth.API.Domain.Entities
 
         /// <summary>
         /// Embedding facial serializado em JSON (vetor de 128 floats).
+        /// Mantido para compatibilidade com dados existentes.
         /// </summary>
         public string Embedding { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Múltiplos embeddings faciais serializados em JSON (array de vetores de 128 floats).
+        /// Permite cadastro com múltiplas fotos para maior precisão.
+        /// </summary>
+        public string? Embeddings { get; set; }
+
+        /// <summary>
+        /// Data e hora do cadastro do usuário.
+        /// </summary>
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         /// <summary>
         /// Logs de acesso associados ao usuário.

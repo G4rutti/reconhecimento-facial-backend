@@ -1,8 +1,11 @@
+using FaceAuth.API.Application.DTOs;
+
 namespace FaceAuth.API.Application.Interfaces
 {
     /// <summary>
     /// Interface para o serviço de reconhecimento facial.
-    /// Responsável por detecção de rosto, geração e comparação de embeddings.
+    /// Responsável por detecção de rosto, geração e comparação de embeddings,
+    /// validação de qualidade de imagem e detecção de spoofing.
     /// </summary>
     public interface IFaceService
     {
@@ -30,5 +33,20 @@ namespace FaceAuth.API.Application.Interfaces
         /// <param name="threshold">Limiar de distância para considerar como mesma pessoa.</param>
         /// <returns>Tupla com resultado (match) e confiança (0-100%).</returns>
         (bool success, double confidence) Compare(float[] embeddingA, float[] embeddingB, double threshold);
+
+        /// <summary>
+        /// Valida a qualidade de uma imagem facial (nitidez, brilho, tamanho do rosto).
+        /// </summary>
+        /// <param name="base64Image">Imagem codificada em base64.</param>
+        /// <returns>Resultado da validação com scores e avisos.</returns>
+        ImageQualityResult ValidateImageQuality(string base64Image);
+
+        /// <summary>
+        /// Detecta se a imagem é de um rosto real ou uma foto/tela (anti-spoofing).
+        /// Utiliza análise de textura LBP e variância de cor.
+        /// </summary>
+        /// <param name="base64Image">Imagem codificada em base64.</param>
+        /// <returns>Score de liveness (0-100). Quanto maior, mais provável ser real.</returns>
+        double DetectSpoofing(string base64Image);
     }
 }
