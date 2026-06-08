@@ -35,6 +35,11 @@ namespace FaceAuth.API.Infrastructure.Data
                     .HasMaxLength(200);
                 entity.Property(u => u.Embedding)
                     .IsRequired();
+                entity.Property(u => u.Embeddings)
+                    .IsRequired(false);
+                entity.Property(u => u.CreatedAt)
+                    .IsRequired()
+                    .HasDefaultValueSql("NOW()");
             });
 
             // Configuração da entidade AccessLog

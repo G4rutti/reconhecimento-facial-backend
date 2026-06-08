@@ -19,5 +19,25 @@ namespace FaceAuth.API.Application.DTOs
         /// Nome do usuário identificado (null se não reconhecido).
         /// </summary>
         public string? UserName { get; set; }
+
+        /// <summary>
+        /// Score de liveness/anti-spoofing (0-100%). Quanto maior, mais provável ser rosto real.
+        /// </summary>
+        public double LivenessScore { get; set; }
+
+        /// <summary>
+        /// Indica se a tentativa foi bloqueada por excesso de tentativas falhas.
+        /// </summary>
+        public bool IsBlocked { get; set; }
+
+        /// <summary>
+        /// Segundos restantes de bloqueio (0 se não bloqueado).
+        /// </summary>
+        public int BlockedSecondsRemaining { get; set; }
+
+        /// <summary>
+        /// Tentativas restantes antes do bloqueio.
+        /// </summary>
+        public int RemainingAttempts { get; set; } = 5;
     }
 }

@@ -56,5 +56,36 @@ namespace FaceAuth.API.Infrastructure.Repositories
             _context.AccessLogs.Add(accessLog);
             await _context.SaveChangesAsync();
         }
+
+        /// <summary>
+        /// Retorna os logs de acesso com paginação e filtro opcional por sucesso.
+        /// Inclui dados do usuário associado.
+        /// </summary>
+        /// <param name="page">Número da página (1-based).</param>
+        /// <param name="pageSize">Tamanho da página.</param>
+        /// <param name="successFilter">Filtro por sucesso (null = todos).</param>
+        /// <returns>Tupla com lista de logs e total de registros.</returns>
+        public async Task<(List<AccessLog> Logs, int TotalCount)> GetAccessLogsAsync(
+            int page, int pageSize, bool? successFilter)
+        {
+            var query = _context.AccessLogs
+                .Include(a => a.User)
+                .AsQueryable();
+
+            if (successFilter.HasValue)
+            {
+                query = query.Where(a => a.Success == successFilter.Value);
+            }
+
+            int totalCount = await query.CountAsync();
+
+            var logs = await query
+                .OrderByDescending(a => a.Timestamp)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (logs, totalCount);
+        }
     }
 }
